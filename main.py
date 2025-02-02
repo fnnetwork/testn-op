@@ -5,8 +5,8 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 # ✅ Replace with your own values
-BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-OWNER_ID = 123456789  # Replace with your Telegram user ID
+BOT_TOKEN = "7589725554:AAGccmKnju8AyYARhiaKmECrPKX0XJmrxEQ"
+OWNER_ID = 7593550190  # Replace with your Telegram user ID
 
 # ✅ Function to check CCs using chkr.cc API
 def check_cc(cc_details):
