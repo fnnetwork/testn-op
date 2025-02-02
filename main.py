@@ -2,11 +2,14 @@ import os
 import requests
 import logging
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
 # ✅ Replace with your own values
-BOT_TOKEN = "7589725554:AAGccmKnju8AyYARhiaKmECrPKX0XJmrxEQ"
+BOT_TOKEN = "8122009466:AAFh9h46K-JUhUJfO0NBU6giRXjZPIJ0hMo"  # Get from BotFather
 OWNER_ID = 7593550190  # Replace with your Telegram user ID
+
+# ✅ Enable logging for debugging
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 # ✅ Function to check CCs using chkr.cc API
 def check_cc(cc_details):
@@ -35,23 +38,23 @@ def check_cc(cc_details):
         return f"Request Error: {e}"
 
 # ✅ Handle `/start` command
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: CallbackContext):
     user = update.effective_user
-    update.message.reply_text(f"Hello {user.first_name}! Send me a TXT file containing CCs to check.")
+    await update.message.reply_text(f"Hello {user.first_name}! Send me a TXT file containing CCs to check.")
 
 # ✅ Handle file uploads (TXT files)
-def handle_file(update: Update, context: CallbackContext):
+async def handle_file(update: Update, context: CallbackContext):
     file = update.message.document
 
     # Ensure it's a .txt file
     if not file.file_name.endswith(".txt"):
-        update.message.reply_text("Please send a .TXT file!")
+        await update.message.reply_text("❌ Please send a valid .TXT file!")
         return
 
     # Download file
     file_path = f"{file.file_name}"
-    file = context.bot.get_file(file.file_id)
-    file.download(file_path)
+    new_file = await context.bot.get_file(file.file_id)
+    await new_file.download_to_drive(file_path)
 
     # Process file
     with open(file_path, "r") as f:
@@ -74,36 +77,35 @@ def handle_file(update: Update, context: CallbackContext):
     else:
         message = "❌ No Approved CCs found."
 
-    update.message.reply_text(message)
+    await update.message.reply_text(message)
 
 # ✅ Restrict access to only OWNER_ID
-def restricted(update: Update, context: CallbackContext):
+async def restricted(update: Update, context: CallbackContext):
     if update.message.from_user.id != OWNER_ID:
-        update.message.reply_text("🚫 You are not authorized to use this bot.")
+        await update.message.reply_text("🚫 You are not authorized to use this bot.")
         return False
     return True
 
 # ✅ Handle unknown messages
-def unknown(update: Update, context: CallbackContext):
-    update.message.reply_text("Unknown command! Send a TXT file to check CCs.")
+async def unknown(update: Update, context: CallbackContext):
+    await update.message.reply_text("⚠ Unknown command! Send a TXT file to check CCs.")
 
 # ✅ Main function to run the bot
 def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+    application = Application.builder().token(BOT_TOKEN).build()
 
     # Commands
-    dp.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("start", start))
     
     # File handling
-    dp.add_handler(MessageHandler(Filters.document, handle_file))
+    application.add_handler(MessageHandler(filters.Document.ALL, handle_file))
 
     # Unknown commands
-    dp.add_handler(MessageHandler(Filters.text, unknown))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown))
 
     # Start bot
-    updater.start_polling()
-    updater.idle()
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
+    
